@@ -1,5 +1,5 @@
 import React from "react";
-import {Link, useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const DashboardActions: React.FC = () => {
   const navigate = useNavigate();
@@ -29,16 +29,6 @@ const DashboardActions: React.FC = () => {
       >
         <span className="text-2xl font-bold">+</span>
       </button>
-        <Link to="/kanban"
-              className="bg-[#3B82F6] hover:bg-[#1769ef] text-white px-4 py-2 rounded shadow"
-        >
-            View Kanban Board
-        </Link>
-        <Link to="/calendar"
-              className="bg-[#3B82F6] hover:bg-[#1769ef] text-white px-4 py-2 rounded shadow"
-        >
-            Calendar
-        </Link>
     </div>
   );
 };

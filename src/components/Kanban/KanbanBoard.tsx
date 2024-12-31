@@ -95,7 +95,7 @@ const KanbanBoard: React.FC = () => {
             items={columns[stage]}
             strategy={verticalListSortingStrategy}
           >
-            <Column name={stage} id={stage}>
+            <Column name={stage} id={stage} count={columns[stage].length}>
               {columns[stage].map((itemId) => {
                 const app = items[itemId];
                 return (
@@ -104,6 +104,7 @@ const KanbanBoard: React.FC = () => {
                     id={app.id}
                     company={app.company}
                     position={app.jobTitle}
+                    stage={stage}
                   />
                 );
               })}

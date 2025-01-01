@@ -31,7 +31,7 @@ const StatusPieChart: React.FC = () => {
   ];
 
   // Define the colors for the pie chart
-    const COLORS = ["#6366F1", "#3B82F6", "#F59E0B", "#10B981", "#EF4444"];
+    const COLORS = ["#A855F7", "#3B82F6", "#F59E0B", "#10B981", "#EF4444"];
 
   return (
     <div className="p-4 bg-white shadow rounded">

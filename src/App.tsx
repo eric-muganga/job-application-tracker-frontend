@@ -3,6 +3,8 @@ import DashboardPage from "./pages/DashboardPage.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
 import MainPage from "./pages/MainPage.tsx";
 import KanbanBoardPage from "./pages/KanbanBoardPage.tsx";
+import CalenderViewPage from "./pages/CalenderViewPage.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -17,6 +19,14 @@ const router = createBrowserRouter([
         path: "/kanban",
         element: <KanbanBoardPage />,
       },
+      {
+        path: "/calendar",
+        element: <CalenderViewPage />
+      },
+      {
+        path: "/profile",
+        element: <ProfilePage />
+      }
     ],
   },
 

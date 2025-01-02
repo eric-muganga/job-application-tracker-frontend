@@ -19,7 +19,9 @@ const Column: React.FC<ColumnProps> = ({ id, name, count, children }) => {
         isOver ? "border-blue-500 border-2" : ""
       }`}
     >
-      <h2 className="py-2 px-1 font-bold mb-px text-center">{name}</h2>
+      <h2 className="sticky top-0 py-2 px-1 font-bold bg-gray-100 text-center z-10">
+        {name}
+      </h2>
       <p className="text-center text-sm text-gray-600 mb-4">
         {count} {count === 1 ? "Job" : "Jobs"}
       </p>

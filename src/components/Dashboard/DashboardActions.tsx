@@ -1,20 +1,16 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const DashboardActions: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleAddNew = () => {
-    navigate("/application/new");
-  };
-
   return (
-    <div className="flex items-center gap-4">
-      <button
-        onClick={handleAddNew}
-        className="fixed
-            bottom-8
-            right-8
+    <div className="relative">
+      <Link
+        to="/application/new"
+        className="fixed z-10
+            bottom-6
+            right-6
+            md:bottom-8
+            md:right-8
             bg-indigo-600
             hover:bg-indigo-700
             text-white
@@ -27,8 +23,8 @@ const DashboardActions: React.FC = () => {
             shadow-lg"
         title="Add New Application"
       >
-        <span className="text-2xl font-bold">+</span>
-      </button>
+        <span className="text-xl md:text-2xl font-bold">+</span>
+      </Link>
     </div>
   );
 };

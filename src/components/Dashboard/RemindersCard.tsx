@@ -6,10 +6,10 @@ import {RootState} from "../../../store/store.ts";
 const RemindersCard: React.FC = () => {
     const remainders = useSelector<RootState, Reminder[]>(selectReminders);
     return (
-        <div className="p-4 bg-white shadow rounded">
+        <div className="p-4 bg-white shadow rounded space-y-4">
             <h2 className="text-lg font-semibold mb-2">Reminders</h2>
             {remainders.length === 0 ? (
-                <p>No Reminders found.</p>
+                <p className="text-sm">No Reminders found.</p>
             ):(
                 <ul className="">
                     {remainders.map((reminder) => (

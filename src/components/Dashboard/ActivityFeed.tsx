@@ -7,16 +7,16 @@ const ActivityFeed: React.FC = () => {
     const activities = useSelector<RootState, Activity[]>(selectActivities);
 
     return (
-        <div className="p-4 bg-white shadow rounded">
-            <h2 className="text-lg font-semibold mb-2">Recent Activity</h2>
+        <div className="p-4 bg-white shadow rounded space-y-4">
+            <h2 className="text-lg font-semibold">Recent Activity</h2>
             {activities.length === 0 ? (
-                <p>No recent activity.</p>
+                <p className="text-sm">No recent activity.</p>
             ) : (
                 <ul>
                     {activities.map((act) => (
                         <li key={act.id} className="border-b py-2">
-                            <div className="text-sm">{act.text}</div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-md">{act.text}</div>
+                            <div className="text-sm text-gray-500">
                                 {act.date
                                     ? new Date(act.date).toLocaleString()
                                     : "No date provided"}

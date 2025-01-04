@@ -4,7 +4,7 @@ import { Outlet } from "react-router-dom";
 
 const MainPage: React.FC = () => {
   return (
-    <div>
+    <div className="overflow-x-clip">
       <Navbar />
       <div className="p-4">
         <Outlet />

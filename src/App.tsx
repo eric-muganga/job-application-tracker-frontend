@@ -5,6 +5,7 @@ import MainPage from "./pages/MainPage.tsx";
 import KanbanBoardPage from "./pages/KanbanBoardPage.tsx";
 import CalenderViewPage from "./pages/CalenderViewPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
+import NewApplication from "./pages/NewApplication.tsx";
 
 const router = createBrowserRouter([
   {
@@ -21,11 +22,15 @@ const router = createBrowserRouter([
       },
       {
         path: "/calendar",
-        element: <CalenderViewPage />
+        element: <CalenderViewPage />,
       },
       {
         path: "/profile",
-        element: <ProfilePage />
+        element: <ProfilePage />,
+      },
+      {
+        path: "/application/new",
+        element: <NewApplication/>
       }
     ],
   },

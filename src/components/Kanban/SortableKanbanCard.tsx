@@ -1,12 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import React from "react";
 
 interface SortableKanbanCardProps {
   id: string;
   company: string;
   position: string;
   stage: string;
+  onClick?: (id: string) => void;
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -22,6 +21,7 @@ const SortableKanbanCard: React.FC<SortableKanbanCardProps> = ({
   company,
   position,
   stage,
+  onClick,
 }) => {
   const {
     attributes,
@@ -34,9 +34,12 @@ const SortableKanbanCard: React.FC<SortableKanbanCardProps> = ({
 
   // convert the transform to a style so the item can be moved
   const style = {
-    transform: CSS.Translate.toString(transform),
+    transform: transform
+      ? `translate(${transform.x}px, ${transform.y}px)`
+      : undefined,
     transition,
     opacity: isDragging ? 0.5 : undefined,
+    cursor: isDragging ? "grab" : "pointer",
   };
   return (
     <div
@@ -44,6 +47,7 @@ const SortableKanbanCard: React.FC<SortableKanbanCardProps> = ({
       style={style}
       {...attributes}
       {...listeners}
+      onClick={() => onClick?.(id)}
       className="m-2 p-2 bg-white shadow cursor-pointer rounded-md flex border"
     >
       <div

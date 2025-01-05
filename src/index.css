@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+}
+

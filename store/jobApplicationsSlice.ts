@@ -32,6 +32,7 @@ export interface JobApplication {
   jobDescription?: string;
   createdAt: string;
   financialInformation: string;
+  location: string;
 }
 
 // Columns shape: each stage holds an array of application IDs
@@ -62,9 +63,11 @@ const DEMO_APPLICATIONS: JobApplication[] = [
     interviewDate: "",
     notes: "Check company's leadership principles",
     contractType: "Full-Time",
-    jobDescription: "Develop scalable services and optimize search features.",
+    jobDescription:
+      "Develop scalable services and optimize search features to enhance the user experience across Google's platforms. Collaborate with cross-functional teams to implement AI-powered solutions for large-scale data processing.",
     createdAt: "2023-12-28T08:00:00Z",
     financialInformation: "$120k base + bonuses",
+    location: "Mountain View, CA",
   },
   {
     id: "2",
@@ -75,9 +78,11 @@ const DEMO_APPLICATIONS: JobApplication[] = [
     interviewDate: "",
     notes: "Referred by a friend on LinkedIn",
     contractType: "Full-Time",
-    jobDescription: "Maintain microservices for streaming platform.",
+    jobDescription:
+      "Maintain and improve microservices architecture for the streaming platform. Work on backend systems responsible for video recommendation, subscription management, and high-availability server infrastructure.",
     createdAt: "2023-12-29T08:00:00Z",
     financialInformation: "$130k base + stock options",
+    location: "Los Gatos, CA",
   },
   {
     id: "3",
@@ -88,9 +93,11 @@ const DEMO_APPLICATIONS: JobApplication[] = [
     interviewDate: "2024-01-20T10:00:00Z",
     notes: "Follow up with recruiter after second round",
     contractType: "Full-Time",
-    jobDescription: "Design CI/CD pipelines for AWS-based apps.",
+    jobDescription:
+      "Design and implement CI/CD pipelines to streamline deployment processes for AWS-based applications. Collaborate with developers and security teams to ensure reliable and secure infrastructure.",
     createdAt: "2023-12-30T08:00:00Z",
     financialInformation: "Negotiable",
+    location: "Seattle, WA",
   },
   {
     id: "4",
@@ -101,9 +108,11 @@ const DEMO_APPLICATIONS: JobApplication[] = [
     interviewDate: "",
     notes: "Offer includes relocation package",
     contractType: "Full-Time",
-    jobDescription: "Build user-facing features for Microsoft 365.",
+    jobDescription:
+      "Build intuitive and user-friendly interfaces for Microsoft 365 applications, focusing on accessibility and performance. Work closely with designers and product managers to deliver seamless user experiences.",
     createdAt: "2023-12-31T08:00:00Z",
     financialInformation: "$140k base + sign-on bonus",
+    location: "Redmond, WA",
   },
   {
     id: "5",
@@ -114,9 +123,41 @@ const DEMO_APPLICATIONS: JobApplication[] = [
     interviewDate: "",
     notes: "Told me they'd keep my resume on file",
     contractType: "Full-Time",
-    jobDescription: "Analyze large-scale user data and generate insights.",
+    jobDescription:
+      "Analyze large-scale user behavior data to identify actionable insights and trends. Develop predictive models to improve content engagement and drive personalized recommendations across Meta's platforms.",
     createdAt: "2023-12-25T08:00:00Z",
     financialInformation: "N/A",
+    location: "Menlo Park, CA",
+  },
+  {
+    id: "6",
+    company: "Apple",
+    jobTitle: "iOS Developer",
+    status: "Wishlist",
+    applicationDate: "2024-01-20",
+    interviewDate: "",
+    notes: "Focus on Swift and UIKit expertise",
+    contractType: "Full-Time",
+    jobDescription:
+      "Develop and maintain iOS applications for Apple's ecosystem. Implement cutting-edge features using Swift and UIKit, ensuring top-notch performance and seamless integration with Apple services.",
+    createdAt: "2023-12-26T08:00:00Z",
+    financialInformation: "$130k base + equity options",
+    location: "Cupertino, CA",
+  },
+  {
+    id: "7",
+    company: "Tesla",
+    jobTitle: "Software Engineer - Autopilot",
+    status: "Applied",
+    applicationDate: "2024-01-18",
+    interviewDate: "",
+    notes: "Explore the role of AI in autonomous driving",
+    contractType: "Full-Time",
+    jobDescription:
+      "Develop and optimize software systems for Tesla's Autopilot, focusing on AI models and real-time data processing. Collaborate with hardware teams to enhance vehicle safety and automation features.",
+    createdAt: "2023-12-27T08:00:00Z",
+    financialInformation: "$150k base + performance bonuses",
+    location: "Palo Alto, CA",
   },
 ];
 
@@ -217,6 +258,11 @@ const jobApplicationsSlice = createSlice({
         state.items[itemId].status = destColumn;
       }
     },
+    addApplication(state, action :PayloadAction<JobApplication>) {
+      const newApp = action.payload;
+      state.items[newApp.id] = newApp;
+      state.columns[newApp.status].push(newApp.id);
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -257,7 +303,7 @@ const jobApplicationsSlice = createSlice({
   },
 });
 
-export const { reorderColumn, moveItem } = jobApplicationsSlice.actions;
+export const { reorderColumn, moveItem, addApplication } = jobApplicationsSlice.actions;
 export const selectApplications = (state: RootState) => state.jobApplications;
 
 export default jobApplicationsSlice.reducer;

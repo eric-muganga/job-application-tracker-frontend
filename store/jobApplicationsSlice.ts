@@ -218,6 +218,32 @@ export const updateApplicationStatus = createAsyncThunk(
   }
 );
 
+// Async thunk to create a new job application
+
+export const createApplication = createAsyncThunk(
+  "jobApplications/createApplication",
+  async (newApplication: {
+    statusId: string;
+    contractTypeId: string;
+    company: string;
+    jobTitle: string;
+    applicationDate?: string;
+    interviewDate?: string;
+    notes: string;
+    jobDescription?: string;
+    createdAt: string;
+    financialInformation: string;
+    location: string;
+  }) => {
+    const response = await axios.post(
+      "https://localhost:44348/api/jobApplication",
+      newApplication
+    );
+    console.log(response);
+    return response.data;
+  }
+);
+
 // Slice for job applications
 const jobApplicationsSlice = createSlice({
   name: "jobApplications",
@@ -258,11 +284,11 @@ const jobApplicationsSlice = createSlice({
         state.items[itemId].status = destColumn;
       }
     },
-    addApplication(state, action :PayloadAction<JobApplication>) {
+    addApplication(state, action: PayloadAction<JobApplication>) {
       const newApp = action.payload;
       state.items[newApp.id] = newApp;
       state.columns[newApp.status].push(newApp.id);
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -299,11 +325,21 @@ const jobApplicationsSlice = createSlice({
         if (state.items[id]) {
           state.items[id].status = status;
         }
+      })
+      .addCase(createApplication.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createApplication.fulfilled, (state, action) => {
+        const newApp = action.payload;
+        state.items[newApp.id] = newApp;
+        //state.columns[newApp.status].push(newApp.id);
       });
   },
 });
 
-export const { reorderColumn, moveItem, addApplication } = jobApplicationsSlice.actions;
+export const { reorderColumn, moveItem, addApplication } =
+  jobApplicationsSlice.actions;
 export const selectApplications = (state: RootState) => state.jobApplications;
 
 export default jobApplicationsSlice.reducer;

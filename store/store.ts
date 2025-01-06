@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import dashboardRender from "./dashboardSlice.ts";
 import jobApplicationsRender from "./jobApplicationsSlice.ts";
+import optionsRender from "./optionsSlice.ts";
 
 const store = configureStore({
   reducer: {
     dashboard: dashboardRender,
     jobApplications: jobApplicationsRender,
+    options: optionsRender,
   },
 });
 

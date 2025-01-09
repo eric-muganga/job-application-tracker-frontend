@@ -2,10 +2,13 @@
 import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
 import {
+  fetchApplications,
   // fetchApplications,
   moveItem,
   reorderColumn,
   selectApplications,
+  Stage,
+  updateApplicationStatus,
 } from "../../../store/jobApplicationsSlice";
 import { STAGES } from "../../../store/jobApplicationsSlice";
 import {
@@ -22,20 +25,21 @@ import {
 } from "@dnd-kit/sortable";
 import Column from "./Column";
 import SortableKanbanCard from "./SortableKanbanCard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ApplicationDetail from "./ApplicationDetail";
+import { STATUS_ID_MAP } from "../../../data/data";
 
 const KanbanBoard: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch: AppDispatch = useDispatch();
 
   const { items, columns, loading, error } = useSelector(selectApplications);
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
-  // 1) Fetch applications on mount
-  // useEffect(() => {
-  //   dispatch(fetchApplications());
-  // }, [dispatch]);
+  //1) Fetch applications on mount
+  useEffect(() => {
+    dispatch(fetchApplications());
+  }, [dispatch]);
 
   // DnD Kit sensors
   // By setting an activationConstraint with distance = 3, the user must move
@@ -77,7 +81,7 @@ const KanbanBoard: React.FC = () => {
         );
       }
     } else {
-      // If moved between columns, dispatch moveItem
+      // If moved between columns, dispatch moveItem and update backend status
       dispatch(
         moveItem({
           itemId: active.id as string,
@@ -85,13 +89,38 @@ const KanbanBoard: React.FC = () => {
           destColumn: overColumn as keyof typeof columns,
         })
       );
+
+      // Update status in the backend
+      const newStage = overColumn as Stage;
+      const newStatusId = STATUS_ID_MAP[newStage];
+      if (!newStatusId) {
+        console.warn("No mapped statusId for stage:", newStage);
+        return;
+      }
+
+      // 6) Dispatch patch with { id, statusId }
+      dispatch(
+        updateApplicationStatus({
+          id: active.id as string,
+          statusId: newStatusId,
+        })
+      )
+        .then(() => {
+          console.log("Status update dispatched successfully!");
+        })
+        .catch((error) => {
+          console.error(
+            "Error updating status:",
+            error.response?.data || error.message
+          );
+        });
     }
   };
 
   // Helper: which column is this item ID in?
   const findContainerForItem = (itemId: string) => {
-    return Object.keys(columns).find((key) =>
-      columns[key as keyof typeof columns].includes(itemId)
+    return (Object.keys(columns) as Stage[]).find((stage) =>
+      columns[stage].includes(itemId)
     );
   };
 

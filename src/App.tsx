@@ -30,8 +30,12 @@ const router = createBrowserRouter([
       },
       {
         path: "/application/new",
-        element: <NewApplication/>
-      }
+        element: <NewApplication />,
+      },
+      {
+        path: "/application/edit",
+        element: <NewApplication />,
+      },
     ],
   },
 

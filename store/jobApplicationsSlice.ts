@@ -1,6 +1,5 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 
 export type Stage =
@@ -10,7 +9,7 @@ export type Stage =
   | "Offer"
   | "Rejected";
 
-// The possible stages
+// All possible stages
 export const STAGES: Stage[] = [
   "Wishlist",
   "Applied",
@@ -19,20 +18,46 @@ export const STAGES: Stage[] = [
   "Rejected",
 ];
 
-// Interface for a single job application from your backend
+// Financial info model
+export interface FinancialInformation {
+  id?: string | null;
+  salary: string;
+  currency: string;
+  salaryType: string;
+  typeOfEmployment: string;
+}
+
+// Main job application model returned by the server
 export interface JobApplication {
   id: string;
   company: string;
   jobTitle: string;
   status: Stage;
+  statusId: string;
+  contractTypeId: string;
   applicationDate?: string;
-  interviewDate?: string;
+  interviewDate?: string | null;
   notes: string;
   contractType: string;
   jobDescription?: string;
   createdAt: string;
-  financialInformation: string;
-  location: string;
+  financialInformation: FinancialInformation;
+  location?: string;
+}
+
+// Payload for creating a new job application (matches your .NET view model)
+export interface NewApplicationPayload {
+  company: string;
+  jobTitle: string;
+  statusId: string; // Must be a valid GUID
+  contractTypeId: string; // Must be a valid GUID
+  applicationDate?: string;
+  interviewDate?: string | null;
+  notes: string;
+  jobDescription?: string;
+  createdAt: string;
+  financialInformation: FinancialInformation | null;
+  location?: string;
 }
 
 // Columns shape: each stage holds an array of application IDs
@@ -44,7 +69,7 @@ interface Columns {
   Rejected: string[];
 }
 
-// We'll store items (by ID) plus the columns
+// Redux slice state
 export interface ApplicationsState {
   items: Record<string, JobApplication>;
   columns: Columns;
@@ -52,116 +77,16 @@ export interface ApplicationsState {
   error: string | null;
 }
 
-//
-const DEMO_APPLICATIONS: JobApplication[] = [
-  {
-    id: "1",
-    company: "Google",
-    jobTitle: "Software Engineer",
-    status: "Wishlist",
-    applicationDate: "2024-01-12",
-    interviewDate: "",
-    notes: "Check company's leadership principles",
-    contractType: "Full-Time",
-    jobDescription:
-      "Develop scalable services and optimize search features to enhance the user experience across Google's platforms. Collaborate with cross-functional teams to implement AI-powered solutions for large-scale data processing.",
-    createdAt: "2023-12-28T08:00:00Z",
-    financialInformation: "$120k base + bonuses",
-    location: "Mountain View, CA",
-  },
-  {
-    id: "2",
-    company: "Netflix",
-    jobTitle: "Backend Developer",
-    status: "Applied",
-    applicationDate: "2024-01-15",
-    interviewDate: "",
-    notes: "Referred by a friend on LinkedIn",
-    contractType: "Full-Time",
-    jobDescription:
-      "Maintain and improve microservices architecture for the streaming platform. Work on backend systems responsible for video recommendation, subscription management, and high-availability server infrastructure.",
-    createdAt: "2023-12-29T08:00:00Z",
-    financialInformation: "$130k base + stock options",
-    location: "Los Gatos, CA",
-  },
-  {
-    id: "3",
-    company: "Amazon",
-    jobTitle: "DevOps Engineer",
-    status: "Interviewing",
-    applicationDate: "2024-01-10",
-    interviewDate: "2024-01-20T10:00:00Z",
-    notes: "Follow up with recruiter after second round",
-    contractType: "Full-Time",
-    jobDescription:
-      "Design and implement CI/CD pipelines to streamline deployment processes for AWS-based applications. Collaborate with developers and security teams to ensure reliable and secure infrastructure.",
-    createdAt: "2023-12-30T08:00:00Z",
-    financialInformation: "Negotiable",
-    location: "Seattle, WA",
-  },
-  {
-    id: "4",
-    company: "Microsoft",
-    jobTitle: "Frontend Engineer",
-    status: "Offer",
-    applicationDate: "2024-01-08",
-    interviewDate: "",
-    notes: "Offer includes relocation package",
-    contractType: "Full-Time",
-    jobDescription:
-      "Build intuitive and user-friendly interfaces for Microsoft 365 applications, focusing on accessibility and performance. Work closely with designers and product managers to deliver seamless user experiences.",
-    createdAt: "2023-12-31T08:00:00Z",
-    financialInformation: "$140k base + sign-on bonus",
-    location: "Redmond, WA",
-  },
-  {
-    id: "5",
-    company: "Meta",
-    jobTitle: "Data Scientist",
-    status: "Rejected",
-    applicationDate: "2024-01-05",
-    interviewDate: "",
-    notes: "Told me they'd keep my resume on file",
-    contractType: "Full-Time",
-    jobDescription:
-      "Analyze large-scale user behavior data to identify actionable insights and trends. Develop predictive models to improve content engagement and drive personalized recommendations across Meta's platforms.",
-    createdAt: "2023-12-25T08:00:00Z",
-    financialInformation: "N/A",
-    location: "Menlo Park, CA",
-  },
-  {
-    id: "6",
-    company: "Apple",
-    jobTitle: "iOS Developer",
-    status: "Wishlist",
-    applicationDate: "2024-01-20",
-    interviewDate: "",
-    notes: "Focus on Swift and UIKit expertise",
-    contractType: "Full-Time",
-    jobDescription:
-      "Develop and maintain iOS applications for Apple's ecosystem. Implement cutting-edge features using Swift and UIKit, ensuring top-notch performance and seamless integration with Apple services.",
-    createdAt: "2023-12-26T08:00:00Z",
-    financialInformation: "$130k base + equity options",
-    location: "Cupertino, CA",
-  },
-  {
-    id: "7",
-    company: "Tesla",
-    jobTitle: "Software Engineer - Autopilot",
-    status: "Applied",
-    applicationDate: "2024-01-18",
-    interviewDate: "",
-    notes: "Explore the role of AI in autonomous driving",
-    contractType: "Full-Time",
-    jobDescription:
-      "Develop and optimize software systems for Tesla's Autopilot, focusing on AI models and real-time data processing. Collaborate with hardware teams to enhance vehicle safety and automation features.",
-    createdAt: "2023-12-27T08:00:00Z",
-    financialInformation: "$150k base + performance bonuses",
-    location: "Palo Alto, CA",
-  },
-];
+// ServiceResponse shape from your backend
+interface ServiceResponse<T> {
+  data: T;
+  message: string;
+  statusCode: number;
+  success: boolean;
+  errorMessages?: string[] | null;
+}
 
-// Initial state (empty columns/items)
+// Start with empty arrays
 const initialColumns: Columns = {
   Wishlist: [],
   Applied: [],
@@ -170,6 +95,10 @@ const initialColumns: Columns = {
   Rejected: [],
 };
 
+// Demo applications array (if you have no actual data initially)
+const DEMO_APPLICATIONS: JobApplication[] = [];
+
+// Helper to build initial store state from an array of applications
 function buildInitialDemoState(
   applications: JobApplication[]
 ): ApplicationsState {
@@ -178,7 +107,6 @@ function buildInitialDemoState(
 
   for (const app of applications) {
     newItems[app.id] = app;
-    // Place the app ID into the correct column array, based on its status
     if (STAGES.includes(app.status)) {
       newColumns[app.status].push(app.id);
     } else {
@@ -194,62 +122,84 @@ function buildInitialDemoState(
   };
 }
 
-// 4) Build initial state from our demo array
+// Initial state
 const initialState: ApplicationsState =
   buildInitialDemoState(DEMO_APPLICATIONS);
 
-// Async thunk to fetch applications from your API
+// Thunk: fetch applications from your API
 export const fetchApplications = createAsyncThunk(
   "jobApplications/fetchApplications",
   async () => {
-    // Adjust the URL to match your endpoint
-    const response = await axios.get<JobApplication[]>("/api/jobApplications");
-    return response.data; // An array of JobApplication
+    const response = await axios.get<ServiceResponse<JobApplication[]>>(
+      "https://localhost:44348/api/JobApplication"
+    );
+    // The server returns { data: [...], message: "...", statusCode: ..., success: ... }
+    // We only need the array of JobApplication
+    console.log(response.data);
+    return response.data.data;
   }
 );
 
-// Async thunk to update application status
+//thunk: update application
+export const updateApplications = createAsyncThunk(
+  "jobApplications/update",
+  async ({ applicationToUpdate }: { applicationToUpdate: JobApplication }) => {
+    const response = await axios.put<ServiceResponse<JobApplication>>(
+      "https://localhost:44348/api/jobApplication",
+      applicationToUpdate
+    );
+    console.log(response.data);
+    return response.data.data;
+  }
+);
+
+// thunk: delete Application
+export const deleteApplication = createAsyncThunk(
+  "jobApplications/delete",
+  async ({ id }: { id: string }) => {
+    const response = await axios.delete<ServiceResponse<JobApplication>>(
+      `https://localhost:44348/api/jobApplication/${id}`
+    );
+
+    console.log(response.data);
+    return response.data.data;
+  }
+);
+
+// Thunk: update application status
 export const updateApplicationStatus = createAsyncThunk(
   "jobApplications/updateStatus",
-  async ({ id, status }: { id: string; status: Stage }) => {
-    // Adjust this URL or method to match your backend
-    await axios.put(`/api/jobApplications/${id}`, { status });
-    return { id, status };
+  async ({ id, statusId }: { id: string; statusId: string }) => {
+    console.log("Application ID:", id);
+    console.log("Status ID:", statusId);
+    // Adjust the URL or method to match your backend
+    const response = await axios.patch<ServiceResponse<JobApplication>>(
+      `https://localhost:44348/api/jobApplication/${id}/status/${statusId}`
+    );
+    console.log(response.data);
+    return response.data.data;
   }
 );
 
-// Async thunk to create a new job application
-
+// Thunk: create a new job application
 export const createApplication = createAsyncThunk(
   "jobApplications/createApplication",
-  async (newApplication: {
-    statusId: string;
-    contractTypeId: string;
-    company: string;
-    jobTitle: string;
-    applicationDate?: string;
-    interviewDate?: string;
-    notes: string;
-    jobDescription?: string;
-    createdAt: string;
-    financialInformation: string;
-    location: string;
-  }) => {
-    const response = await axios.post(
+  async (newApplication: NewApplicationPayload) => {
+    const response = await axios.post<ServiceResponse<JobApplication>>(
       "https://localhost:44348/api/jobApplication",
       newApplication
     );
-    console.log(response);
-    return response.data;
+    // The server returns the entire ServiceResponse, but we only want the job application
+    return response.data.data;
   }
 );
 
-// Slice for job applications
+// The slice
 const jobApplicationsSlice = createSlice({
   name: "jobApplications",
   initialState,
   reducers: {
-    // 1) Reorder within same column
+    // Reorder items within the same column
     reorderColumn(
       state,
       action: PayloadAction<{
@@ -260,7 +210,7 @@ const jobApplicationsSlice = createSlice({
       const { column, reorderedItems } = action.payload;
       state.columns[column] = reorderedItems;
     },
-    // 2) Move item across columns
+    // Move item across columns
     moveItem(
       state,
       action: PayloadAction<{
@@ -279,11 +229,12 @@ const jobApplicationsSlice = createSlice({
       // add to destination
       state.columns[destColumn].push(itemId);
 
-      // update item status
+      // update the app's status
       if (state.items[itemId]) {
         state.items[itemId].status = destColumn;
       }
     },
+    // Add a new application directly (used if you want to insert it without an API call)
     addApplication(state, action: PayloadAction<JobApplication>) {
       const newApp = action.payload;
       state.items[newApp.id] = newApp;
@@ -292,6 +243,7 @@ const jobApplicationsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // fetchApplications
       .addCase(fetchApplications.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -303,7 +255,7 @@ const jobApplicationsSlice = createSlice({
         const newItems: Record<string, JobApplication> = {};
         const newColumns: Columns = structuredClone(initialColumns);
 
-        // Distribute the apps into columns based on 'status'
+        // Distribute the apps based on 'status'
         for (const app of fetchedApps) {
           newItems[app.id] = app;
           if (STAGES.includes(app.status)) {
@@ -312,28 +264,74 @@ const jobApplicationsSlice = createSlice({
             console.warn("Unknown status", app.status);
           }
         }
+
+        // Overwrite the store with fresh data
         state.items = newItems;
         state.columns = newColumns;
       })
+
       .addCase(fetchApplications.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch applications";
       })
+
+      // updateApplicationStatus
       .addCase(updateApplicationStatus.fulfilled, (state, action) => {
         // If the backend confirms the update, you can apply any final changes:
-        const { id, status } = action.payload;
+        const updatedApplication = action.payload; // Updated JobApplication from backend
+        const { id, status } = updatedApplication;
+
+        // Update the item's status
         if (state.items[id]) {
+          const oldStatus = state.items[id].status;
           state.items[id].status = status;
+
+          // Move the item to the new column
+          const oldColumn = state.columns[oldStatus];
+          const newColumn = state.columns[status];
+
+          // Remove from the old column
+          const index = oldColumn.indexOf(id);
+          if (index !== -1) oldColumn.splice(index, 1);
+
+          // Add to the new column
+          newColumn.push(id);
         }
       })
+      .addCase(updateApplicationStatus.rejected, (state, action) => {
+        state.error =
+          action.error.message || "Failed to update application status.";
+      })
+      // createApplication
       .addCase(createApplication.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createApplication.fulfilled, (state, action) => {
-        const newApp = action.payload;
+        const newApp = action.payload; // single JobApplication
+        state.loading = false;
+        // Insert the new job application in store
         state.items[newApp.id] = newApp;
-        //state.columns[newApp.status].push(newApp.id);
+        state.columns[newApp.status].push(newApp.id);
+      })
+      .addCase(createApplication.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to create application";
+      })
+      .addCase(deleteApplication.fulfilled, (state, action) => {
+        const deletedId = action.payload.id;
+
+        // Remove from items
+        delete state.items[deletedId];
+
+        // Remove from columns
+        Object.keys(state.columns).forEach((key) => {
+          const column = state.columns[key as Stage];
+          const index = column.indexOf(deletedId);
+          if (index !== -1) {
+            column.splice(index, 1);
+          }
+        });
       });
   },
 });

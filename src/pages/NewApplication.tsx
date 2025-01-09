@@ -1,9 +1,11 @@
 import React, { ChangeEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createApplication,
-  JobApplication,
+  NewApplicationPayload,
+  Stage,
+  updateApplications,
 } from "../../store/jobApplicationsSlice.ts";
 import {
   fetchContractTypes,
@@ -12,17 +14,42 @@ import {
 } from "../../store/optionsSlice.ts";
 import { AppDispatch } from "../../store/store.ts";
 
-const initialState: Omit<JobApplication, "id"> = {
+interface FormState {
+  id?: string; // Only used when editing an existing application
+  company: string;
+  jobTitle: string;
+  status: string; // We'll convert this to statusId
+  applicationDate: string;
+  interviewDate: string;
+  notes: string;
+  contractType: string; // We'll convert this to contractTypeId
+  jobDescription: string;
+  createdAt: string;
+  financialInformation: {
+    salary: string;
+    currency: string;
+    salaryType: string;
+    typeOfEmployment: string;
+  };
+  location: string;
+}
+
+const initialState: FormState = {
   company: "",
   jobTitle: "",
-  status: "Wishlist",
+  status: "",
   applicationDate: "",
   interviewDate: "",
   notes: "",
   contractType: "",
   jobDescription: "",
   createdAt: new Date().toISOString(),
-  financialInformation: "",
+  financialInformation: {
+    salary: "",
+    currency: "",
+    salaryType: "",
+    typeOfEmployment: "",
+  },
   location: "",
 };
 
@@ -31,13 +58,28 @@ const NewApplication: React.FC = () => {
   const navigate = useNavigate();
   const { contractTypes, statuses, loading, error } =
     useSelector(selectOptions);
-
   const dispatch: AppDispatch = useDispatch();
+  const location = useLocation();
 
   useEffect(() => {
     dispatch(fetchStatuses());
     dispatch(fetchContractTypes());
   }, [dispatch]);
+
+  useEffect(() => {
+    // If we're editing an existing application, load the data
+    if (location.state) {
+      const application = location.state;
+      const matchedContractType = contractTypes.find(
+        (type) => type.id === application.contractTypeId
+      );
+      setFormData({
+        ...application,
+        contractType: matchedContractType?.name || "",
+      });
+      console.log(location.state);
+    }
+  }, [location, contractTypes]);
 
   // handle input change
   const handleOnChange = (
@@ -48,28 +90,82 @@ const NewApplication: React.FC = () => {
     const { name, value } = event.target;
     setFormData({
       ...formData,
-      [name]: value as keyof typeof formData,
+      [name]: value || "", // Ensure empty strings are set instead of `undefined
     });
   };
 
+  // handle nested financialInformation
+  const handleFinancialInfoChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      financialInformation: {
+        ...prev.financialInformation,
+        [name]: value,
+      },
+    }));
+  };
+
+  console.log(formData);
   // handle form submission
   const handleOnSubmit = async (event: React.SyntheticEvent) => {
     event.preventDefault();
 
+    // Find the matching GUIDs from your loaded 'statuses' and 'contractTypes'
     const selectedStatus = statuses.find((s) => s.name === formData.status);
     const selectedContractType = contractTypes.find(
-      (ct) => ct.name === formData.contractType
+      (c) => c.name === formData.contractType
     );
 
+    const isEditMode = !!formData.id;
+
     // Create the new application object
-    const newApplication = {
-      ...formData,
-      statusId: selectedStatus?.id || "",
-      contractTypeId: selectedContractType?.id || "",
+    const applicationPayload: NewApplicationPayload = {
+      company: formData.company,
+      jobTitle: formData.jobTitle,
+      applicationDate: formData.applicationDate || "",
+      interviewDate: formData.interviewDate || null,
+      notes: formData.notes,
+      jobDescription: formData.jobDescription || "",
+      createdAt: new Date().toISOString(), // Automatically set the created date
+      financialInformation: {
+        // If you leave out "id", the server sees it as a new record
+        salary: formData.financialInformation.salary,
+        currency: formData.financialInformation.currency,
+        salaryType: formData.financialInformation.salaryType,
+        typeOfEmployment: formData.financialInformation.typeOfEmployment,
+      },
+      location: formData.location || "",
+      statusId: selectedStatus?.id || "", // Ensure it's a string
+      contractTypeId: selectedContractType?.id || "", // Ensure it's a string
     };
 
     try {
-      await dispatch(createApplication(newApplication)).unwrap();
+      if (isEditMode) {
+        const updatedApplication = {
+          id: formData.id!,
+          company: formData.company,
+          jobTitle: formData.jobTitle,
+          statusId: selectedStatus?.id || "", // Map the status to its ID
+          status: (formData.status as Stage) || "Wishlist", // Map the status to its name
+          contractTypeId: selectedContractType?.id || "", // Map the contract type to its ID
+          contractType: formData.contractType || "", // Map the contract type to its name
+          applicationDate: formData.applicationDate,
+          interviewDate: formData.interviewDate || null,
+          notes: formData.notes,
+          jobDescription: formData.jobDescription,
+          createdAt: formData.createdAt,
+          financialInformation: formData.financialInformation,
+          location: formData.location || "Unknown",
+        };
+        await dispatch(
+          updateApplications({ applicationToUpdate: updatedApplication })
+        ).unwrap();
+      } else {
+        await dispatch(createApplication(applicationPayload));
+      }
 
       // Reset the form
       setFormData(initialState);
@@ -78,8 +174,6 @@ const NewApplication: React.FC = () => {
     } catch (error) {
       console.error("Failed to create a new application:", error);
     }
-
-    console.log("form data", newApplication);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -89,7 +183,7 @@ const NewApplication: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
       <div className="bg-white shadow-md rounded-md p-6 w-full max-w-5xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          Add New Application
+          {formData.id ? "Edit Application" : "Add New Application"}
         </h2>
         <form className="grid grid-cols-1 lg:grid-cols-2 gap-6" method="POST">
           {/* Left Column */}
@@ -155,7 +249,7 @@ const NewApplication: React.FC = () => {
                 Application Date:
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 name="applicationDate"
                 id="applicationDate"
                 className="form-input border border-gray-300"
@@ -179,10 +273,6 @@ const NewApplication: React.FC = () => {
                 value={formData.interviewDate}
               />
             </div>
-          </div>
-
-          {/* Right Column */}
-          <div>
             {/* Contract Type */}
             <div className="form-group">
               <label htmlFor="contractType" className="form-label">
@@ -219,7 +309,10 @@ const NewApplication: React.FC = () => {
                 maxLength={200}
               />
             </div>
+          </div>
 
+          {/* Right Column */}
+          <div>
             {/* Job Description */}
             <div className="form-group">
               <label htmlFor="jobDescription" className="form-label">
@@ -236,20 +329,78 @@ const NewApplication: React.FC = () => {
               />
             </div>
 
-            {/* Financial Information */}
+            {/* Financial Information Fields */}
             <div className="form-group">
-              <label htmlFor="financialInformation" className="form-label">
-                Financial Information (Optional):
+              <label htmlFor="salary" className="form-label">
+                Salary:
               </label>
               <input
                 type="text"
-                name="financialInformation"
-                id="financialInformation"
-                placeholder="Enter salary, benefits, etc."
+                name="salary"
+                id="salary"
+                placeholder="Enter Salary"
                 className="form-input border border-gray-300"
-                onChange={handleOnChange}
-                value={formData.financialInformation}
+                onChange={handleFinancialInfoChange}
+                value={formData.financialInformation.salary}
+                required
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="currency" className="form-label">
+                Currency:
+              </label>
+              <select
+                name="currency"
+                id="currency"
+                className="form-input border border-gray-300"
+                onChange={handleFinancialInfoChange}
+                value={formData.financialInformation.currency}
+                required
+              >
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="PLN">PLN</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="salaryType" className="form-label">
+                Salary Type:
+              </label>
+              <select
+                name="salaryType"
+                id="salaryType"
+                className="form-input border border-gray-300"
+                onChange={handleFinancialInfoChange}
+                value={formData.financialInformation.salaryType}
+                required
+              >
+                <option value="Monthly">Monthly</option>
+                <option value="Hourly">Hourly</option>
+                <option value="Annually">Annually</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="typeOfEmployment" className="form-label">
+                Type of Employment:
+              </label>
+              <select
+                name="typeOfEmployment"
+                id="typeOfEmployment"
+                className="form-input border border-gray-300"
+                onChange={handleFinancialInfoChange}
+                value={formData.financialInformation.typeOfEmployment}
+                required
+              >
+                <option value="Remote">Remote</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="On-site">On-site</option>
+                <option value="Permanent">Permanent</option>
+                <option value="Commission-Based">Commission-Based</option>
+                <option value="Temporary">Temporary</option>
+              </select>
             </div>
 
             {/* Location */}
@@ -264,7 +415,7 @@ const NewApplication: React.FC = () => {
                 placeholder="Enter Location"
                 className="form-input border border-gray-300"
                 onChange={handleOnChange}
-                value={formData.location}
+                value={formData.location || ""}
               />
             </div>
           </div>

@@ -2,19 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-
 .form-group {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 .form-label {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
 .form-input {
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
 }
 
+/* Reusable Input Styles */
+.input {
+  @apply w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring focus:ring-blue-300;
+}
+
+/* Reusable Label Styles */
+.label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+/* Reusable Form Section */
+.form-section {
+  @apply mb-4;
+}
+
+/* Reusable Error Message */
+.error-message {
+  @apply text-red-500 text-sm mb-4 text-center;
+}
+
+/* Reusable Form Container */
+.form-container {
+  @apply bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md;
+}
+
+/* Reusable Page Wrapper */
+.page-wrapper {
+  @apply flex items-center justify-center min-h-screen bg-gray-100;
+}
+
+/* Reusable Button Styles */
+.button {
+  @apply w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 focus:outline-none;
+}
+
+/* Reusable Heading Styles */
+.heading {
+  @apply text-2xl font-bold text-gray-800 mb-4;
+}

@@ -6,10 +6,20 @@ import KanbanBoardPage from "./pages/KanbanBoardPage.tsx";
 import CalenderViewPage from "./pages/CalenderViewPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import NewApplication from "./pages/NewApplication.tsx";
+import RegisterPage from "./pages/RegisterPage.tsx";
+import LoginPage from "./pages/LoginPage.tsx";
 
 const router = createBrowserRouter([
   {
-    path: "/", // to change later
+    path: "/register",
+    element: <RegisterPage />,
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/",
     element: <MainPage />,
     children: [
       {

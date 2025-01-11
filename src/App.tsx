@@ -8,6 +8,7 @@ import ProfilePage from "./pages/ProfilePage.tsx";
 import NewApplication from "./pages/NewApplication.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
+import PrivateRoute from "./components/PrivateRoute.tsx";
 
 const router = createBrowserRouter([
   {
@@ -19,11 +20,16 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    // Our protected (authenticated) routes go here
     path: "/",
-    element: <MainPage />,
+    element: (
+      <PrivateRoute>
+        <MainPage />
+      </PrivateRoute>
+    ),
     children: [
       {
-        path: "/",
+        index: true,
         element: <DashboardPage />,
       },
       {

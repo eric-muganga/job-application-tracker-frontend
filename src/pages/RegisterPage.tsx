@@ -1,7 +1,12 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "../../store/store";
-import { registerUser } from "../../store/authSlice";
+import {
+  registerUser,
+  selectAuthLoading,
+  selectAuthError,
+} from "../../store/authSlice";
+import { useNavigate, Link } from "react-router-dom";
 
 interface RegisterForm {
   email: string;
@@ -19,35 +24,87 @@ const initialState: RegisterForm = {
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState(initialState);
-  const [error, setError] = useState<string | null>(null);
-  const dispatch: AppDispatch = useDispatch();
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const loading = useSelector(selectAuthLoading);
+  const error = useSelector(selectAuthError);
+  const navigate = useNavigate(); // Navigation hook
+
+  const passwordRules = {
+    length: {
+      regex: /^.{8,}$/,
+      message: "Password must be at least 8 characters long.",
+    },
+    uppercase: {
+      regex: /[A-Z]/,
+      message: "Password must contain at least one uppercase letter (A-Z).",
+    },
+    number: {
+      regex: /\d/,
+      message: "Password must contain at least one number (0-9).",
+    },
+    special: {
+      regex: /[!@#$%^&*]/,
+      message:
+        "Password must contain at least one special character (e.g., !@#$%^&*).",
+    },
+  };
+
+  const validatePassword = (password: string): string[] => {
+    const validationErrors: string[] = [];
+    Object.values(passwordRules).forEach(({ regex, message }) => {
+      if (!regex.test(password)) {
+        validationErrors.push(message);
+      }
+    });
+    return validationErrors;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+
+    if (name === "password") {
+      const errors = validatePassword(value);
+      setPasswordErrors(errors);
+    }
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic validation
     if (
       !formData.email ||
       !formData.password ||
       !formData.firstName ||
       !formData.fullName
     ) {
-      setError("All fields are required.");
+      alert("All fields are required.");
       return;
     }
-    setError(null);
+
+    // Check for password errors
+    const errors = validatePassword(formData.password);
+    if (errors.length > 0) {
+      alert("Please fix the password issues before submitting.");
+      return;
+    }
 
     try {
-      const user = await dispatch(registerUser(formData)).unwrap();
-      console.log("User registered successfully:", user);
-    } catch (err: any) {
-      setError(err.message || "Failed to register.");
+      // Dispatch the async thunk
+      await dispatch(registerUser(formData)).unwrap();
+
+      // Optionally navigate to the login page after successful registration:
+      navigate("/login");
+
+      // Clear form on success
+      setFormData(initialState);
+      setPasswordErrors([]);
+    } catch (err) {
+      console.error("Registration failed:", err);
     }
-    // Handle register logic here
-    setFormData(initialState);
   };
 
   return (
@@ -57,15 +114,15 @@ const RegisterPage: React.FC = () => {
         {error && <div className="error-message">{error}</div>}
 
         <div className="form-section">
-          <label className="label">Name</label>
+          <label className="label">First Name</label>
           <input
             type="text"
-            name="name"
+            name="firstName"
             value={formData.firstName}
             onChange={handleChange}
             className="input"
             required
-            autoComplete="first-name"
+            autoComplete="given-name"
           />
         </div>
 
@@ -78,43 +135,64 @@ const RegisterPage: React.FC = () => {
             onChange={handleChange}
             className="input"
             required
-            autoComplete="full-name"
+            autoComplete="name"
           />
         </div>
 
         <div className="form-section">
-          <label htmlFor="email" className="label">
+          <label className="label" htmlFor="email">
             Email
           </label>
           <input
             type="email"
             id="email"
+            name="email"
             value={formData.email}
             onChange={handleChange}
             className="input"
-            autoComplete="email"
             required
+            autoComplete="email"
           />
         </div>
 
         <div className="form-section">
-          <label htmlFor="password" className="label">
+          <label className="label" htmlFor="password">
             Password
           </label>
           <input
             type="password"
             id="password"
+            name="password"
             value={formData.password}
             onChange={handleChange}
             className="input"
-            autoComplete="new-password"
             required
+            autoComplete="new-password"
           />
         </div>
 
-        <button type="submit" className="button">
-          Register
+        {/* Display password validation errors */}
+        <div>
+          <ul>
+            {passwordErrors.map((error, index) => (
+              <li key={index} style={{ color: "red" }}>
+                {error}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <button type="submit" className="button" disabled={loading}>
+          {loading ? "Registering..." : "Register"}
         </button>
+
+        {/* Link to Login page */}
+        <div style={{ marginTop: "1rem" }}>
+          <span>Already have an account? </span>
+          <Link to="/login" style={{ color: "#007bff" }}>
+            Login here
+          </Link>
+        </div>
       </form>
     </div>
   );

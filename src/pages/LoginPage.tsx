@@ -42,8 +42,9 @@ const LoginPage: React.FC = () => {
 
     try {
       // Dispatch the login thunk
-      await dispatch(loginUser(formData)).unwrap();
+      const result = await dispatch(loginUser(formData)).unwrap();
 
+      console.log(result);
       // If login is successful, navigate to "/"
       navigate("/");
     } catch (err) {

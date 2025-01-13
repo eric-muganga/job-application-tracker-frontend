@@ -9,6 +9,10 @@ import NewApplication from "./pages/NewApplication.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import PrivateRoute from "./components/PrivateRoute.tsx";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { parseToken } from "./services/jwt.ts";
+import { setUser } from "../store/authSlice.ts";
 
 const router = createBrowserRouter([
   {
@@ -64,6 +68,16 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      const user = parseToken(token);
+      if (user) {
+        dispatch(setUser(user));
+      }
+    }
+  }, [dispatch]);
   return (
     <>
       <RouterProvider router={router} />

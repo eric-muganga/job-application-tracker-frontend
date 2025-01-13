@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "./store"; // Adjust the path as needed
 import {
   registerUserService,
@@ -9,14 +9,18 @@ import {
 
 import axios from "axios";
 
+import { parseToken } from "../src/services/jwt";
+
 interface AuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
 }
 
+const token = localStorage.getItem("authToken");
+
 const initialState: AuthState = {
-  user: null, // or { firstName: "", fullName: "", email: "", password: "" }
+  user: token ? parseToken(token) : null, // or { firstName: "", fullName: "", email: "", password: "" }
   loading: false,
   error: null,
 };
@@ -48,7 +52,7 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const data = await loginUserService(credentials);
-      return data; // Possibly includes token, user info, etc.
+      return data.user; // Possibly includes token, user info, etc.
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         // Narrowed to AxiosError
@@ -71,7 +75,10 @@ const authSlice = createSlice({
   reducers: {
     logout(state) {
       state.user = null;
-      // If you store a token somewhere, be sure to remove it from localStorage
+      localStorage.removeItem("authToken");
+    },
+    setUser(state, action: PayloadAction<User>) {
+      state.user = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -106,7 +113,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setUser } = authSlice.actions;
 
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectAuthLoading = (state: RootState) => state.auth.loading;

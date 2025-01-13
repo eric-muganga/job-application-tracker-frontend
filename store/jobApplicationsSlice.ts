@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
 import { RootState } from "./store";
+import axiosInstance from "../src/services/axiosConfig";
 
 export type Stage =
   | "Wishlist"
@@ -45,7 +45,7 @@ export interface JobApplication {
   location?: string;
 }
 
-// Payload for creating a new job application (matches your .NET view model)
+// Payload for creating a new job application (matches the .NET view model)
 export interface NewApplicationPayload {
   company: string;
   jobTitle: string;
@@ -130,8 +130,8 @@ const initialState: ApplicationsState =
 export const fetchApplications = createAsyncThunk(
   "jobApplications/fetchApplications",
   async () => {
-    const response = await axios.get<ServiceResponse<JobApplication[]>>(
-      "https://localhost:44348/api/JobApplication"
+    const response = await axiosInstance.get<ServiceResponse<JobApplication[]>>(
+      "/JobApplication"
     );
     // The server returns { data: [...], message: "...", statusCode: ..., success: ... }
     // We only need the array of JobApplication
@@ -144,8 +144,8 @@ export const fetchApplications = createAsyncThunk(
 export const updateApplications = createAsyncThunk(
   "jobApplications/update",
   async ({ applicationToUpdate }: { applicationToUpdate: JobApplication }) => {
-    const response = await axios.put<ServiceResponse<JobApplication>>(
-      "https://localhost:44348/api/jobApplication",
+    const response = await axiosInstance.put<ServiceResponse<JobApplication>>(
+      "/JobApplication",
       applicationToUpdate
     );
     console.log(response.data);
@@ -157,9 +157,9 @@ export const updateApplications = createAsyncThunk(
 export const deleteApplication = createAsyncThunk(
   "jobApplications/delete",
   async ({ id }: { id: string }) => {
-    const response = await axios.delete<ServiceResponse<JobApplication>>(
-      `https://localhost:44348/api/jobApplication/${id}`
-    );
+    const response = await axiosInstance.delete<
+      ServiceResponse<JobApplication>
+    >(`/JobApplication/${id}`);
 
     console.log(response.data);
     return response.data.data;
@@ -173,8 +173,8 @@ export const updateApplicationStatus = createAsyncThunk(
     console.log("Application ID:", id);
     console.log("Status ID:", statusId);
     // Adjust the URL or method to match your backend
-    const response = await axios.patch<ServiceResponse<JobApplication>>(
-      `https://localhost:44348/api/jobApplication/${id}/status/${statusId}`
+    const response = await axiosInstance.patch<ServiceResponse<JobApplication>>(
+      `/JobApplication/${id}/status/${statusId}`
     );
     console.log(response.data);
     return response.data.data;
@@ -185,8 +185,8 @@ export const updateApplicationStatus = createAsyncThunk(
 export const createApplication = createAsyncThunk(
   "jobApplications/createApplication",
   async (newApplication: NewApplicationPayload) => {
-    const response = await axios.post<ServiceResponse<JobApplication>>(
-      "https://localhost:44348/api/jobApplication",
+    const response = await axiosInstance.post<ServiceResponse<JobApplication>>(
+      "/JobApplication",
       newApplication
     );
     // The server returns the entire ServiceResponse, but we only want the job application

@@ -5,11 +5,15 @@ import {
   loginUserService,
   User,
   LoginCredentials,
+  updatePasswordService,
+  PasswordUpdatePayload,
 } from "../src/services/userService";
 
 import axios from "axios";
 
 import { parseToken } from "../src/services/jwt";
+import { removeUser, saveUser } from "../src/services/localStorageUtils";
+import { jwtDecode } from "jwt-decode";
 
 interface AuthState {
   user: User | null;
@@ -18,9 +22,35 @@ interface AuthState {
 }
 
 const token = localStorage.getItem("authToken");
+let user = null;
+
+if (token) {
+  try {
+    const decodedToken = jwtDecode<{
+      exp: number;
+      email: string;
+      fullName: string;
+      firstName: string;
+    }>(token);
+    const isExpired = decodedToken.exp * 1000 < Date.now();
+
+    if (!isExpired) {
+      user = {
+        email: decodedToken.email,
+        fullName: decodedToken.fullName,
+        firstName: decodedToken.firstName,
+      };
+    } else {
+      localStorage.removeItem("authToken");
+    }
+  } catch (error) {
+    console.error("Invalid token:", error);
+    localStorage.removeItem("authToken");
+  }
+}
 
 const initialState: AuthState = {
-  user: token ? parseToken(token) : null, // or { firstName: "", fullName: "", email: "", password: "" }
+  user,
   loading: false,
   error: null,
 };
@@ -51,8 +81,8 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      const data = await loginUserService(credentials);
-      return data.user; // Possibly includes token, user info, etc.
+      const { user } = await loginUserService(credentials);
+      return user; // Possibly includes token, user info, etc.
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         // Narrowed to AxiosError
@@ -69,6 +99,32 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+export const updatePassword = createAsyncThunk(
+  "auth/updatePassword",
+  async (
+    { email, oldPassword, newPassword }: PasswordUpdatePayload,
+    { rejectWithValue }
+  ) => {
+    try {
+      const data = await updatePasswordService({
+        email,
+        oldPassword,
+        newPassword,
+      });
+      return data; // API response
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(
+          error.response?.data?.message || error.message || "Axios error"
+        );
+      } else if (error instanceof Error) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue("An unknown error occurred.");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -76,6 +132,7 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null;
       localStorage.removeItem("authToken");
+      removeUser();
     },
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
@@ -104,9 +161,21 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.user = action.payload;
+        saveUser(action.payload); // Save user details in localStorage
         state.loading = false;
       })
       .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(updatePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updatePassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updatePassword.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

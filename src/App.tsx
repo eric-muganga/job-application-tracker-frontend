@@ -11,8 +11,10 @@ import LoginPage from "./pages/LoginPage.tsx";
 import PrivateRoute from "./components/PrivateRoute.tsx";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { parseToken } from "./services/jwt.ts";
-import { setUser } from "../store/authSlice.ts";
+import { logout, setUser } from "../store/authSlice.ts";
+import { jwtDecode } from "jwt-decode";
+import { AppDispatch } from "../store/store.ts";
+import { getUser } from "./services/localStorageUtils.ts";
 
 const router = createBrowserRouter([
   {
@@ -68,13 +70,25 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (token) {
-      const user = parseToken(token);
-      if (user) {
-        dispatch(setUser(user));
+      try {
+        const { exp }: { exp: number } = jwtDecode(token);
+        if (exp * 1000 < Date.now()) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("user");
+          dispatch(logout());
+        } else {
+          const savedUser = getUser();
+          if (savedUser) {
+            dispatch(setUser(savedUser));
+          }
+        }
+      } catch (error) {
+        console.error("Invalid token:", error);
+        dispatch(logout());
       }
     }
   }, [dispatch]);

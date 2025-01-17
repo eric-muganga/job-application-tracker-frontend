@@ -1,7 +1,7 @@
 // MonthlyApplicationsChart.tsx
-import React from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "../../../store/store";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "../../../store/store";
 import {
   BarChart,
   Bar,
@@ -11,14 +11,20 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { selectMonthlyApplications, MonthlyApplication } from "../../../store/dashboardSlice";
-
+import {
+  selectMonthlyApplications,
+  fetchMonthlyApplications,
+} from "../../../store/dashboardSlice";
 
 const MonthlyApplicationsChart: React.FC = () => {
-  // Use the typed selector, which returns an array of MonthlyApplication
-  const monthlyApplications = useSelector<RootState, MonthlyApplication[]>(
-    selectMonthlyApplications
-  );
+  const dispatch = useDispatch<AppDispatch>();
+  // Use selector to get the monthly applications data
+  const monthlyApplications = useSelector(selectMonthlyApplications);
+
+  // Fetch monthly applications data on mount
+  useEffect(() => {
+    dispatch(fetchMonthlyApplications());
+  }, [dispatch]);
 
   return (
     <div className="p-4 bg-white shadow rounded">

@@ -12,6 +12,12 @@ export interface DashboardStats {
   rejected: number;
 }
 
+// Status Interface
+export interface StatusWithCount {
+  name: string;
+  value: number;
+}
+
 // Define the shape of the monthly applications
 export interface MonthlyApplication {
   month: string;
@@ -34,7 +40,7 @@ export interface Activity {
 
 // Define the shape of the dashboard state
 interface DashboardState {
-  stats: DashboardStats;
+  stats: StatusWithCount[];
   monthlyApplications: MonthlyApplication[];
   reminders: Reminder[];
   activities: Activity[];
@@ -44,14 +50,7 @@ interface DashboardState {
 
 // Define the initial state
 const initialState: DashboardState = {
-  stats: {
-    total: 15,
-    wishlist: 2,
-    applied: 8,
-    interviewing: 3,
-    offer: 1,
-    rejected: 1,
-  },
+  stats: [],
   monthlyApplications: [
     { month: "Jan", applications: 2 },
     { month: "Feb", applications: 4 },
@@ -97,12 +96,65 @@ const initialState: DashboardState = {
   error: null,
 };
 
-// Async thunk to fetch dashboard data
-export const fetchDashboardData = createAsyncThunk(
-  "dashboard/fetchData",
-  async () => {
-    const response = await axios.get("http://localhost:8080/api/dashboard"); // to change url
-    return response.data;
+// Async thunk to fetch status data
+export const fetchStatusCounts = createAsyncThunk(
+  "dashboard/fetchStatusCounts",
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("authToken"); // Fetch the token from localStorage
+      const response = await axios.get(
+        "https://localhost:44348/api/JobApplication/statistics-by-statuses",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log(response.data);
+
+      return response.data.data.map((status: any) => ({
+        name: status.statusName,
+        value: status.total,
+      }));
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.message) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue("Failed to load status data");
+    }
+  }
+);
+
+// Async thunk to fetch monthly applications data
+export const fetchMonthlyApplications = createAsyncThunk(
+  "dashboard/fetchMonthlyApplications",
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await axios.get(
+        "https://localhost:44348/api/JobApplication/statistics-per-months",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log(response.data);
+      // Convert API response to the expected format
+      return Object.entries(response.data.data).map(
+        ([month, applications]) => ({
+          month,
+          applications,
+        })
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.message) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue("Failed to load monthly applications data");
+    }
   }
 );
 
@@ -112,21 +164,29 @@ const dashboardSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDashboardData.pending, (state) => {
+      .addCase(fetchStatusCounts.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchDashboardData.fulfilled, (state, action) => {
+      .addCase(fetchStatusCounts.fulfilled, (state, action) => {
         state.loading = false;
-        // Safely handle undefined arrays
-        state.stats = action.payload.stats;
-        state.reminders = action.payload.reminders ?? [];
-        state.monthlyApplications = action.payload.monthlyApplications ?? [];
-        state.activities = action.payload.activities ?? [];
+        state.stats = action.payload;
       })
-      .addCase(fetchDashboardData.rejected, (state, action) => {
+      .addCase(fetchStatusCounts.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to load dashboard data";
+        state.error = action.payload as string;
+      })
+      .addCase(fetchMonthlyApplications.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMonthlyApplications.fulfilled, (state, action) => {
+        state.loading = false;
+        state.monthlyApplications = action.payload;
+      })
+      .addCase(fetchMonthlyApplications.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });

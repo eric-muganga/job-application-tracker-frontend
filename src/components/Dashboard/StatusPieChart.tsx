@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   PieChart,
   Pie,
@@ -7,31 +7,36 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { useSelector } from "react-redux";
-import { RootState } from "../../../store/store";
-import { selectStats, DashboardStats } from "../../../store/dashboardSlice.ts";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "../../../store/store";
+import {
+  selectStats,
+  fetchStatusCounts,
+} from "../../../store/dashboardSlice.ts";
 
-// define a local interface for the pie data
-interface PieDataItem {
-  name: string;
-  value: number;
-}
+// Define a color map for each status
+const STATUS_COLORS: Record<string, string> = {
+  Wishlist: "#A855F7", // Purple
+  Applied: "#3B82F6", // Blue
+  Interviewing: "#F59E0B", // Orange
+  Offer: "#10B981", // Green
+  Rejected: "#EF4444", // Red
+};
 
 const StatusPieChart: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   // Use the typed selector, which returns an object of DashboardStats
-  const stats = useSelector<RootState, DashboardStats>(selectStats);
+  const stats = useSelector(selectStats);
 
-  // Define the pie data
-  const pieData: PieDataItem[] = [
-    { name: "Wishlist", value: stats.wishlist },
-    { name: "Applied", value: stats.applied },
-    { name: "Interviewing", value: stats.interviewing },
-    { name: "Offer", value: stats.offer },
-    { name: "Rejected", value: stats.rejected },
-  ];
+  useEffect(() => {
+    dispatch(fetchStatusCounts());
+  }, [dispatch]);
 
-  // Define the colors for the pie chart
-    const COLORS = ["#A855F7", "#3B82F6", "#F59E0B", "#10B981", "#EF4444"];
+  // Convert stats to match Recharts data structure
+  const pieData = stats.map((stat) => ({
+    name: stat.name, // Assuming your stats include statusName
+    value: stat.value, // Assuming your stats include total
+  }));
 
   return (
     <div className="p-4 bg-white shadow rounded">
@@ -51,7 +56,7 @@ const StatusPieChart: React.FC = () => {
             {pieData.map((_entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
+                fill={STATUS_COLORS[_entry.name] || "#888888"}
               />
             ))}
           </Pie>

@@ -1,12 +1,23 @@
 import React, { useState } from "react";
 import { NavItems } from "../../data/data";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import { GiHamburgerMenu } from "react-icons/gi";
 import { ImCross } from "react-icons/im";
+import { AppDispatch } from "../../store/store";
+import { useDispatch } from "react-redux";
+import { logout } from "../../store/authSlice";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logout()); // Dispatch the logout action
+    navigate("/login"); // Redirect to the login page
+  };
+
   return (
     <>
       <nav className="bg-gray-800 text-white p-4 shadow">
@@ -29,6 +40,15 @@ const Navbar: React.FC = () => {
                 </NavLink>
               </li>
             ))}
+            {/* Logout Button */}
+            <li>
+              <button
+                onClick={handleLogout}
+                className="bg-blue-500 px-4 py-2 rounded-md text-white hover:bg-blue-600"
+              >
+                Logout
+              </button>
+            </li>
           </ul>
           {/* Hamburger Menu */}
           <button
@@ -70,6 +90,18 @@ const Navbar: React.FC = () => {
               </NavLink>
             </li>
           ))}
+          {/* Logout Button */}
+          <li>
+            <button
+              onClick={() => {
+                setIsMenuOpen(false); // Close sidebar
+                handleLogout();
+              }}
+              className="w-full bg-blue-500 px-4 py-2 rounded-md text-white hover:bg-blue-600"
+            >
+              Logout
+            </button>
+          </li>
         </ul>
       </div>
     </>

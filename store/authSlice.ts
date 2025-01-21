@@ -11,7 +11,6 @@ import {
 
 import axios from "axios";
 
-import { parseToken } from "../src/services/jwt";
 import { removeUser, saveUser } from "../src/services/localStorageUtils";
 import { jwtDecode } from "jwt-decode";
 
